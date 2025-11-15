@@ -11,7 +11,7 @@ library(dplyr)
 
 # read Data
 
-data <- read_excel("/Users/george/Documents/Project/x23058_Pro.xlsx")
+data <- read_excel("/Users/george/Documents/Project/Data.xlsx")
 
 # Variables
 # y <- as.matrix(data$`Real GDP`)
