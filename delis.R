@@ -13,35 +13,30 @@ library(dplyr)
 
 data <- read_excel("/Users/george/Documents/Project/Data.xlsx")
 
-# Variables
-# y <- as.matrix(data$`Real GDP`)
-# x1 <- as.matrix(data$`Receipt travels`)
-# x2 <- as.matrix(data$`N of Travel`)
-# x3 <- as.matrix(data$`CPI QQ`)
-# x4 <- as.matrix(data$`Crude Oil/brent`)
-# x5 <- as.matrix(data$`Employment Rate`)
-# x6 <- as.matrix(data$`EXPORT GOOD/SER`)
+# Step 1, stationarity 
 
 
-# Step 1, stationarity # +2 , +1
+border <- 0.05 # Initialize the border you want for the P-value
+lagvar <- 5 # Initialize how many Variables you have for percentage change and NOT diff
+variables <- ncol(data) - 1 # Find the number of the variables i have based on the Excel Format
+ending <- ncol(data) # Go till the last variable in the Excel Format
+ADF_pvalues <- numeric(variables) # Create a numeric to store all the P-values
+names(ADF_pvalues) <- colnames(data)[2:ending] # Apply the names to each numeric
+diff_data <- data.frame(DATE = data$DATE[-1]) # Create a data set for the first changed data
+diff_data_2 <- data.frame(DATE = data$DATE[-(1:2)]) # Create a data set for the second changed data
 
-ADF_pvalues <- numeric(11)
-names(ADF_pvalues) <- colnames(data)[2:12]
-diff_data <- data.frame(DATE = data$DATE[-1])
-diff_data_2 <- data.frame(DATE = data$DATE[-(1:2)])
 
-
-for (i in 2:12) # Find the P-Values for each Variable
+for (i in 2:ending) # Find the P-Values for each Variable
 { 
   ADF_result <- adf.test(as.numeric(data[[i]]))
   ADF_pvalues[i - 1] <- ADF_result$p.value
 }
 
 
-for (i in 1:11) # If P-value > 0.05 then diff
+for (i in 1:variables) # If P-value > 0.05 then diff
 {
-  if (i <= 5){
-    if (ADF_pvalues[i] < 0.05) {
+  if (i <= lagvar){
+    if (ADF_pvalues[i] < border) {
       diff_data[[names(ADF_pvalues)[i]]] <- data[[i + 1]][-1]
     } 
     else {
@@ -51,7 +46,7 @@ for (i in 1:11) # If P-value > 0.05 then diff
     }
   }
   else {
-    if (ADF_pvalues[i] < 0.05) {
+    if (ADF_pvalues[i] < border) {
       diff_data[[names(ADF_pvalues)[i]]] <- data[[i + 1]][-1]
     }
     else{
@@ -60,7 +55,7 @@ for (i in 1:11) # If P-value > 0.05 then diff
   }
 }
 
-for (i in 2:12)  # Find the P-Values for each Variable AGAIN
+for (i in 2:ending)  # Find the P-Values for each Variable AGAIN
 {
   series <- as.numeric(diff_data[[i]])
   ADF_result <- adf.test(series)
@@ -68,10 +63,10 @@ for (i in 2:12)  # Find the P-Values for each Variable AGAIN
 }
 
 
-for (i in 1:11) # If P-value > 0.05 then diff
+for (i in 1:variables) # If P-value > 0.05 then diff
 {
-  if (i <= 5){
-    if (ADF_pvalues[i] < 0.05) {
+  if (i <= lagvar){
+    if (ADF_pvalues[i] < border) {
       diff_data_2[[names(ADF_pvalues)[i]]] <- diff_data[[i + 1]][-1]
     } 
     else {
@@ -81,7 +76,7 @@ for (i in 1:11) # If P-value > 0.05 then diff
     }
   }
   else {
-    if (ADF_pvalues[i] < 0.05) {
+    if (ADF_pvalues[i] < border) {
       diff_data_2[[names(ADF_pvalues)[i]]] <- diff_data[[i + 1]][-1]
     }
     else{
@@ -90,7 +85,7 @@ for (i in 1:11) # If P-value > 0.05 then diff
   }
 }
 
-for (i in 2:12) # Find the P-Values for each Variable
+for (i in 2:ending) # Find the P-Values for each Variable
 {
   series <- as.numeric(diff_data_2[[i]])
   ADF_result <- adf.test(series)
@@ -98,10 +93,10 @@ for (i in 2:12) # Find the P-Values for each Variable
 }
 
 # Step 2, Correlation matrix
-correlation_matrix <- cor(diff_data_2[, 2:12])
+correlation_matrix <- cor(diff_data_2[, 2:ending])
 
 # Step 2, Multicollinearity, polisigramikotita
-model <- lm(diff_data_2$`Real GDP` ~ ., data = diff_data_2[, 3:12])  
+model <- lm(diff_data_2$`Real GDP` ~ ., data = diff_data_2[, 3:ending])  
 vif_values <- vif(model)
 
 # Step 3 scatter-plot
