@@ -9,99 +9,74 @@ library(car)
 library(stats)
 library(dplyr)
 
-# read Data
+# Initialize VARIABLES 
 
-data <- read_excel("/Users/george/Documents/Project/Data.xlsx")
+# CHANGE BELOW
+data <- read_excel("/Users/george/Documents/Project/Data.xlsx") # Read the data CHANGE PATHS
+border <- 0.05 # Initialize the border you want for the P-value CHANGE YOUR BORDER
+lagvar <- 5 # Initialize how many Variables you have for percentage change and NOT diff # CHANGE THE VALUES YOU HAVE TO LAG
+# CHANGE ABOVE
+
+variables <- ncol(data) - 1 # Find the number of the variables i have based on the Excel Format
+ending <- ncol(data) # Go till the last variable in the Excel Format
+current_data <- data # hold the current_data for temporary in the loop
+iteration <- 0 # for the while loop of the stationarity
+variables <- ncol(current_data) - 1 # Find the Ammount of Variables we will use for the regressor -1 due to the date
+ending <- ncol(current_data) # Ending Variable
+ADF_pvalues <- numeric(variables) # Create a numeric to place in the ADF values based on the variables we have
+names(ADF_pvalues) <- colnames(current_data)[2:ending] # Give the names to the ADF values 
+
 
 # Step 1, stationarity 
 
+repeat { # Used repeat cause i wanna run the stationarity untill all stationed.It is the same as the do-while waits until break
+  
+  for (i in 2:ending) {
+    ADF_result <- adf.test(as.numeric(current_data[[i]]))
+    ADF_pvalues[i - 1] <- ADF_result$p.value # Find the P-values
+  }
+  
+  if (all(ADF_pvalues < border)) {
+    final_data <- current_data # Save the Last Dataset
+    break # Stop the loop if all stationary
+  }
 
-border <- 0.05 # Initialize the border you want for the P-value
-lagvar <- 5 # Initialize how many Variables you have for percentage change and NOT diff
-variables <- ncol(data) - 1 # Find the number of the variables i have based on the Excel Format
-ending <- ncol(data) # Go till the last variable in the Excel Format
-ADF_pvalues <- numeric(variables) # Create a numeric to store all the P-values
-names(ADF_pvalues) <- colnames(data)[2:ending] # Apply the names to each numeric
-diff_data <- data.frame(DATE = data$DATE[-1]) # Create a data set for the first changed data
-diff_data_2 <- data.frame(DATE = data$DATE[-(1:2)]) # Create a data set for the second changed data
-
-
-for (i in 2:ending) # Find the P-Values for each Variable
-{ 
-  ADF_result <- adf.test(as.numeric(data[[i]]))
-  ADF_pvalues[i - 1] <- ADF_result$p.value
-}
-
-
-for (i in 1:variables) # If P-value > 0.05 then diff
-{
-  if (i <= lagvar){
-    if (ADF_pvalues[i] < border) {
-      diff_data[[names(ADF_pvalues)[i]]] <- data[[i + 1]][-1]
-    } 
-    else {
-      x <- data[[i + 1]]
-      pct_change <- (x - dplyr::lag(x, 1)) / dplyr::lag(x, 1)
-      diff_data[[names(ADF_pvalues)[i]]] <- pct_change[-1]
+  diff_data <- data.frame(DATE = current_data$DATE[-1]) # Build next dataset
+  
+  for (i in 1:variables) {
+    name <- names(ADF_pvalues)[i]
+    x <- current_data[[i + 1]]
+    
+    if (i <= lagvar && iteration == 0) { # && iteration == 0 BECAUSE after the first one the percentages MUST be diff not per changed
+      if (ADF_pvalues[i] < border) {
+        diff_data[[name]] <- x[-1] # KEEP ORIGINAL VALUES BUT REMOVE FIRST ROW
+      } else {
+        pct_change <- (x - dplyr::lag(x, 1)) / dplyr::lag(x, 1)# PERCENT CHANGE
+        diff_data[[name]] <- pct_change[-1] # first value is NA that is why i apply -1
+      }
+    } else 
+      {
+      if (ADF_pvalues[i] < border) {
+        diff_data[[name]] <- x[-1]# KEEP ORIGINAL VALUES BUT REMOVE FIRST value
+      } else {
+        diff_data[[name]] <- diff(x) # DIFFERENCE
+      }
     }
   }
-  else {
-    if (ADF_pvalues[i] < border) {
-      diff_data[[names(ADF_pvalues)[i]]] <- data[[i + 1]][-1]
-    }
-    else{
-      diff_data[[names(ADF_pvalues)[i]]] <- diff(data[[i + 1]]) 
-    }
-  }
-}
-
-for (i in 2:ending)  # Find the P-Values for each Variable AGAIN
-{
-  series <- as.numeric(diff_data[[i]])
-  ADF_result <- adf.test(series)
-  ADF_pvalues[i - 1] <- ADF_result$p.value
-}
-
-
-for (i in 1:variables) # If P-value > 0.05 then diff
-{
-  if (i <= lagvar){
-    if (ADF_pvalues[i] < border) {
-      diff_data_2[[names(ADF_pvalues)[i]]] <- diff_data[[i + 1]][-1]
-    } 
-    else {
-      x <- diff_data[[i + 1]]
-      pct_change <- (x - dplyr::lag(x, 1)) / dplyr::lag(x, 1)
-      diff_data_2[[names(ADF_pvalues)[i]]] <- pct_change[-1]
-    }
-  }
-  else {
-    if (ADF_pvalues[i] < border) {
-      diff_data_2[[names(ADF_pvalues)[i]]] <- diff_data[[i + 1]][-1]
-    }
-    else{
-      diff_data_2[[names(ADF_pvalues)[i]]] <- diff(diff_data[[i + 1]]) 
-    }
-  }
-}
-
-for (i in 2:ending) # Find the P-Values for each Variable
-{
-  series <- as.numeric(diff_data_2[[i]])
-  ADF_result <- adf.test(series)
-  ADF_pvalues[i - 1] <- ADF_result$p.value
+  current_data <- diff_data # Change the current_data to the diff_data for the next loop
+  iteration <- iteration + 1   # Move to next iteration
 }
 
 # Step 2, Correlation matrix
-correlation_matrix <- cor(diff_data_2[, 2:ending])
+correlation_matrix <- cor(final_data[, 2:ending])
 
 # Step 2, Multicollinearity, polisigramikotita
-model <- lm(diff_data_2$`Real GDP` ~ ., data = diff_data_2[, 3:ending])  
+model <- lm(final_data$`Real GDP` ~ ., data = final_data[, 3:ending])  
 vif_values <- vif(model)
 
 # Step 3 scatter-plot
 
-plot_data <- diff_data_2 %>%
+plot_data <- final_data %>%
   select(-DATE) %>%                    # remove DATE column
   select(`Real GDP`, everything())     # ensure Real GDP is first
 
@@ -123,6 +98,7 @@ ggplot(plot_data_long, aes(x = Value, y = `Real GDP`)) +
   )
 
 # Print menu
+
 print(ADF_pvalues) # Print the p-values
 print(vif_values) # Print the multicollinearity
 print(correlation_matrix) # Print the correlation
