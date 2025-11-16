@@ -8,20 +8,23 @@ library(dplyr)
 library(car)
 library(stats)
 library(dplyr)
+library(tidyr)
 
 # Initialize VARIABLES 
 
 # CHANGE BELOW
+
 data <- read_excel("/Users/george/Documents/Project/Data.xlsx") # Read the data CHANGE PATHS
 border <- 0.05 # Initialize the border you want for the P-value CHANGE YOUR BORDER
 lagvar <- 5 # Initialize how many Variables you have for percentage change and NOT diff # CHANGE THE VALUES YOU HAVE TO LAG
 # CHANGE ABOVE
 
+
 variables <- ncol(data) - 1 # Find the number of the variables i have based on the Excel Format
 ending <- ncol(data) # Go till the last variable in the Excel Format
 current_data <- data # hold the current_data for temporary in the loop
 iteration <- 0 # for the while loop of the stationarity
-variables <- ncol(current_data) - 1 # Find the Ammount of Variables we will use for the regressor -1 due to the date
+variables <- ncol(current_data) - 1 # Find the Amount of Variables we will use for the regression -1 due to the date
 ending <- ncol(current_data) # Ending Variable
 ADF_pvalues <- numeric(variables) # Create a numeric to place in the ADF values based on the variables we have
 names(ADF_pvalues) <- colnames(current_data)[2:ending] # Give the names to the ADF values 
