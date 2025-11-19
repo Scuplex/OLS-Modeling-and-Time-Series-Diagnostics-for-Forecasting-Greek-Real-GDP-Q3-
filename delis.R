@@ -4,19 +4,19 @@ library(car)
 library(lmtest)
 library(ggplot2)
 library(forecast)
-library(dplyr)
 library(car)
 library(stats)
 library(dplyr)
 library(tidyr)
+library(lmtest)
 
 # Initialize VARIABLES 
 
 # CHANGE BELOW
 
-data <- read_excel("/Users/george/Documents/Project/Data.xlsx") # Read the data CHANGE PATHS
+data <- read_excel("Data.xlsx") # Read the data CHANGE PATHS
 border <- 0.05 # Initialize the border you want for the P-value CHANGE YOUR BORDER
-lagvar <- 5 # Initialize how many Variables you have for percentage change and NOT diff # CHANGE THE VALUES YOU HAVE TO LAG
+lagvar <- 7 # Initialize how many Variables you have for percentage change and NOT diff # CHANGE THE VALUES YOU HAVE TO LAG
 # CHANGE ABOVE
 
 
@@ -70,11 +70,12 @@ repeat { # Used repeat cause i wanna run the stationarity untill all stationed.I
   iteration <- iteration + 1   # Move to next iteration
 }
 
+
 # Step 2, Correlation matrix
 correlation_matrix <- cor(final_data[, 2:ending])
 
-# Step 2, Multicollinearity, polisigramikotita
-model <- lm(final_data$`Real GDP` ~ ., data = final_data[, 3:ending])  
+# Step 2, Multicollinearity without N of Travel
+model <- lm(`Real GDP` ~ ., data = final_data %>% select(-DATE)) 
 vif_values <- vif(model)
 
 # Step 3 scatter-plot
@@ -100,8 +101,40 @@ ggplot(plot_data_long, aes(x = Value, y = `Real GDP`)) +
     y = "Real GDP"
   )
 
-# Print menu
+# adjusted r squared
+summary_model <- summary(model)
+adjusted_r_squared <- summary_model$adj.r.squared
+
+# residuals autocorrelation
+dw_test <- dwtest(model)
+
+# residuals homoscedasticity
+bptest_result <- bptest(model)
+
+
+# f-test 
+f_test <- summary_model$fstatistic
+
+# Print Menu
 
 print(ADF_pvalues) # Print the p-values
 print(vif_values) # Print the multicollinearity
+if (bptest_result$p.value < border) {
+  cat("The residuals are heteroscedastic (p-value:", bptest_result$p.value, ")\n")
+} else {
+  cat("The residuals are homoscedastic (p-value:", bptest_result$p.value, ")\n")
+}
+
+if (dw_test$p.value < border) {
+  cat("The residuals are autocorrelated (p-value:", dw_test$p.value, ")\n")
+} else {
+  cat("The residuals are not autocorrelated (p-value:", dw_test$p.value, ")\n")
+}
+
+if (adjusted_r_squared > 0.7) {
+  cat("The model has a good fit (Adjusted R-squared:", adjusted_r_squared, ")\n")
+} else {
+  cat("The model does not have a good fit (Adjusted R-squared:", adjusted_r_squared, ")\n")
+}
+
 print(correlation_matrix) # Print the correlation
