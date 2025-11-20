@@ -29,6 +29,8 @@ ending <- ncol(current_data) # Ending Variable
 ADF_pvalues <- numeric(variables) # Create a numeric to place in the ADF values based on the variables we have
 names(ADF_pvalues) <- colnames(current_data)[2:ending] # Give the names to the ADF values 
 
+y <- as.matrix(data$`Real GDP`)
+# make the variable Y percentage changes using lag 
 
 # Step 1, stationarity 
 
@@ -73,6 +75,10 @@ repeat { # Used repeat cause i wanna run the stationarity untill all stationed.I
 
 # Step 2, Correlation matrix
 correlation_matrix <- cor(final_data[, 2:ending])
+# use image to show correlation
+image(correlation_matrix, axes = FALSE, main = "Correlation Matrix Heatmap")
+axis(1, at = seq(0, 1, length.out = ncol(correlation_matrix)), labels = colnames(correlation_matrix), las = 2)
+axis(2, at = seq(0, 1, length.out = nrow(correlation_matrix)), labels = colnames(correlation_matrix), las = 2)
 
 # Step 2, Multicollinearity without N of Travel
 model <- lm(`Real GDP` ~ ., data = final_data %>% select(-DATE)) 
@@ -106,35 +112,23 @@ summary_model <- summary(model)
 adjusted_r_squared <- summary_model$adj.r.squared
 
 # residuals autocorrelation
-dw_test <- dwtest(model)
+bg_test <- bgtest(model, order = 4) # make it so you can do it for all models save it into a numeric and find the best model use a2 loop i,j :)
+bg_test <- bg_test$p.value
+print(bg_test)
 
 # residuals homoscedasticity
-bptest_result <- bptest(model)
+bptest_result <- bptest(model) #Breusch-Pagan test
+bptest_pvalue <- bptest_result$p.value
+print(bptest_pvalue)
 
+# Normality test
+shapiro_test <- shapiro.test(residuals(model)) # Shapiro-Wilk test
 
 # f-test 
-f_test <- summary_model$fstatistic
+f_test <- summary_model$fstatistic # F-statistic
 
 # Print Menu
 
 print(ADF_pvalues) # Print the p-values
 print(vif_values) # Print the multicollinearity
-if (bptest_result$p.value < border) {
-  cat("The residuals are heteroscedastic (p-value:", bptest_result$p.value, ")\n")
-} else {
-  cat("The residuals are homoscedastic (p-value:", bptest_result$p.value, ")\n")
-}
-
-if (dw_test$p.value < border) {
-  cat("The residuals are autocorrelated (p-value:", dw_test$p.value, ")\n")
-} else {
-  cat("The residuals are not autocorrelated (p-value:", dw_test$p.value, ")\n")
-}
-
-if (adjusted_r_squared > 0.7) {
-  cat("The model has a good fit (Adjusted R-squared:", adjusted_r_squared, ")\n")
-} else {
-  cat("The model does not have a good fit (Adjusted R-squared:", adjusted_r_squared, ")\n")
-}
-
 print(correlation_matrix) # Print the correlation
