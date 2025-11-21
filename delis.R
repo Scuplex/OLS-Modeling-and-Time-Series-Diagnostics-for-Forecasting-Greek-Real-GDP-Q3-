@@ -1,8 +1,9 @@
 source("libraries.R")
 source("config.R")
 source("stationarity_utils.R")
+source("allmodels.R")
 
-# Initialize Variables
+# In  itialize Variables
 data <- read_excel(file_path) 
 variables <- ncol(data) - 1 # Find the number of the variables i have based on the Excel Format
 ending <- ncol(data) # Go till the last variable in the Excel Format
@@ -14,6 +15,12 @@ ending <- ncol(current_data) # Ending Variable
 results_list <- make_stationary(data, border, lagvar) # Def for stationarity
 final_data <- results_list$final_data # Extract Final Data
 final_adf_values <- results_list$final_adf_values # Extract ADF P-values
+
+# Find All models
+models_df <- allmodels(final_data)
+
+
+
 
 # Step 2, Correlation matrix
 correlation_matrix <- cor(final_data[, 2:ending])
@@ -44,33 +51,6 @@ ggplot(plot_data_long, aes(x = Value, y = `Real GDP`)) +
     x = "Explanatory Variables",
     y = "Real GDP"
   )
-
-
-
-# Your predictors (replace with your names if different)
-predictors <- colnames(data)[3:ncol(data)]
-
-# Make all combinations from size 1 to 10
-combos <- unlist(
-  lapply(1:length(predictors), function(k) combn(predictors, k, simplify = FALSE)),
-  recursive = FALSE
-)
-
-# Turn each combination into a formula string
-model_formulas <- sapply(combos, function(vars) {
-  paste("Y", paste(vars, collapse = " + "))
-})
-
-# Put all models in a simple data frame
-models_df <- data.frame(model = model_formulas)
-
-# See the first few
-head(models_df)
-
-
-
-
-
 
 # adjusted r squared
 summary_model <- summary(model)
