@@ -11,7 +11,6 @@ make_stationary <- function(data, border, lagvar) {
   # Your exact loop logic
   repeat { 
     
-    print(paste("Running Iteration:", iteration))
     for (i in 2:ending) {
       ADF_result <- adf.test(as.numeric(current_data[[i]]))
       ADF_pvalues[i - 1] <- ADF_result$p.value # Find the P-values
