@@ -2,32 +2,31 @@ source("libraries.R")
 source("config.R")
 source("stationarity_utils.R")
 source("allmodels.R")
+source("AutoHomo.R")
 
-# In  itialize Variables
+# Initialize Variables
 data <- read_excel(file_path) 
 variables <- ncol(data) - 1 # Find the number of the variables i have based on the Excel Format
 ending <- ncol(data) # Go till the last variable in the Excel Format
 current_data <- data # hold the current_data for temporary in the loop
 variables <- ncol(current_data) - 1 # Find the Amount of Variables we will use for the regression -1 due to the date
 ending <- ncol(current_data) # Ending Variable
+y_name <- names(data)[2] # Dependent Variable Name
 
 # Step 1, Stationarity def
 results_list <- make_stationary(data, border, lagvar) # Def for stationarity
 final_data <- results_list$final_data # Extract Final Data
-final_adf_values <- results_list$final_adf_values # Extract ADF P-values
+final_adf_values <- results_list$ADF_pvalues # Extract ADF P-values
 
 # Find All models
 models_df <- allmodels(final_data)
 
-
-
+# Autocorrelation and Homoscedasticity tests for all models
+diagnostics_df <- AutoHomo(models_df, final_data, y_name)
+final_results <- cbind(models_df, diagnostics_df)
 
 # Step 2, Correlation matrix
 correlation_matrix <- cor(final_data[, 2:ending])
-
-# Step 2, Multicollinearity without N of Travel
-model <- lm(`Real GDP` ~ ., data = final_data %>% select(-DATE)) 
-vif_values <- vif(model)
 
 # Step 3 scatter-plot
 
@@ -55,22 +54,6 @@ ggplot(plot_data_long, aes(x = Value, y = `Real GDP`)) +
 # adjusted r squared
 summary_model <- summary(model)
 adjusted_r_squared <- summary_model$adj.r.squared
-
-# residuals autocorrelation
-bg_test <- bgtest(model, order = 4) # make it so you can do it for all models save it into a numeric and find the best model use a2 loop i,j :)
-bg_test <- bg_test$p.value
-print(bg_test) # if p-value < 0.05 then we have autocorrelation
-
-# residuals homoscedasticity
-bptest_result <- bptest(model) #Breusch-Pagan test
-bptest_pvalue <- bptest_result$p.value
-print(bptest_pvalue)
-
-# Normality test
-shapiro_test <- shapiro.test(residuals(model)) # Shapiro-Wilk test
-
-# f-test 
-f_test <- summary_model$fstatistic # F-statistic
 
 # Print Menu
 

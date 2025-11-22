@@ -6,7 +6,8 @@ make_stationary <- function(data, border, lagvar) {
   ending <- ncol(current_data)        
   iteration <- 0                      
   ADF_pvalues <- numeric(variables) 
-  names(ADF_pvalues) <- colnames(current_data)[2:ending] 
+  names(ADF_pvalues) <- colnames(current_data)[2:ending]
+  
   
   # Your exact loop logic
   repeat { 
@@ -17,7 +18,7 @@ make_stationary <- function(data, border, lagvar) {
     }
     
     # 2. Check Exit Condition
-    if (all(ADF_pvalues < border)) {
+    if (iteration == 2) {
       final_data <- current_data # Save the Last Dataset
       break # Stop the loop if all stationary
     }
@@ -33,8 +34,7 @@ make_stationary <- function(data, border, lagvar) {
         if (ADF_pvalues[i] < border) {
           diff_data[[name]] <- x[-1] # KEEP ORIGINAL VALUES BUT REMOVE FIRST ROW
         } else {
-          pct_change <- (x - dplyr::lag(x, 1)) / dplyr::lag(x, 1) # PERCENT CHANGE
-          diff_data[[name]] <- pct_change[-1] # first value is NA that is why i apply -1
+          diff_data[[name]] <- diff(log(x)) # PERCENTAGE CHANGE
         }
       } else {
         if (ADF_pvalues[i] < border) {
