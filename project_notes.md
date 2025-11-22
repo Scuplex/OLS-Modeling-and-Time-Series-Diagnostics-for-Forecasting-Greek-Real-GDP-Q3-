@@ -25,3 +25,39 @@ print(bg_test) # if p-value < 0.05 then we have autocorrelation
 bptest_result <- bptest(model) #Breusch-Pagan test
 bptest_pvalue <- bptest_result$p.value
 print(bptest_pvalue)
+
+# adjusted r squared
+summary_model <- summary(model)
+adjusted_r_squared <- summary_model$adj.r.squared
+
+
+# ask delis
+
+use shapiro?
+
+
+
+# ADD
+
+# Step 3 scatter-plot
+
+plot_data <- final_data %>%
+  select(-DATE) %>%                    # remove DATE column
+  select(`Real GDP`, everything())     # ensure Real GDP is first
+
+plot_data_long <- plot_data %>%
+  pivot_longer(
+    cols = -`Real GDP`,
+    names_to = "Variable",
+    values_to = "Value"
+  )
+
+ggplot(plot_data_long, aes(x = Value, y = `Real GDP`)) +
+  geom_point(color = "steelblue") +
+  facet_wrap(~ Variable, scales = "free_x") +
+  theme_minimal(base_size = 10) +
+  labs(
+    title = "Scatterplots of Real GDP vs Explanatory Variables",
+    x = "Explanatory Variables",
+    y = "Real GDP"
+  )

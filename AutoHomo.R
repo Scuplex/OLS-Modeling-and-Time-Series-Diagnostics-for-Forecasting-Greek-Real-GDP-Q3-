@@ -5,6 +5,10 @@ AutoHomo <- function(models_df, final_data, dep_var_name) {
   # 1. Create empty places to store our results
   ac_pvalues <- numeric(nrow(models_df))
   hc_pvalues <- numeric(nrow(models_df))
+  r2_pvalues <- numeric(nrow(models_df))
+  vif_values <- numeric(nrow(models_df))
+  norm_value <- numeric(nrow(models_df))
+  aikaike_value <- numeric(nrow(models_df))
   
   # 2. Start the loop
   for (i in 1:nrow(models_df)) {
@@ -35,18 +39,30 @@ AutoHomo <- function(models_df, final_data, dep_var_name) {
       # Run the Tests
       ac_pvalues[i] <- bgtest(model)$p.value  # Autocorrelation
       hc_pvalues[i] <- bptest(model)$p.value  # Homoscedasticity
+      r2_pvalues[i] <- summary(model)$r.squared # R Squared
+      vif_values[i] <- max(vif(model)) # max VIF value cause we care about the worst case
+      norm_value[i] <- ks.test(residuals(model), "pnorm", mean = mean(resid(model)), sd = sd(resid(model)))$p.value # The p-value of the Normality test must be high to accept normality p-value > 0.05
+      aikaike_value[i] <- AIC(model) # AIC value for model comparison
       
     } else {
       # No variables found for this row
       ac_pvalues[i] <- NA
       hc_pvalues[i] <- NA
+      r2_pvalues[i] <- NA
+      vif_values[i] <- NA
+      norm_value[i] <- NA
+      aikaike_value[i] <- NA
     }
   }
   
   # 4. Save and return the result
   results <- data.frame(
     Autocorrelation_Pval = ac_pvalues,
-    Homoscedasticity_Pval = hc_pvalues
+    Homoscedasticity_Pval = hc_pvalues,
+    R_Squared = r2_pvalues,
+    VIF_Pval = vif_values,
+    Normality_Pval = norm_value,
+    AIC_Value = aikaike_value
   )
   
   return(results)
