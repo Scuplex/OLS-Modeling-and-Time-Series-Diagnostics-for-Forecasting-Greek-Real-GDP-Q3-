@@ -5,7 +5,7 @@ source("allmodels.R")
 source("AutoHomo.R")
 
 # Initialize Variables
-data <- read_excel(file_path) 
+data <- read_excel(file_path) # Read Data
 y_name <- names(data)[2] # Dependent Variable Name
 
 # 1. Separate Dummies from Data

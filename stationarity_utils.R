@@ -1,12 +1,13 @@
 make_stationary <- function(data, border, lagvar) {
   
   current_data <- data
+  
   # Initialize variables based on the input data
-  variables <- ncol(current_data) - 1 
-  ending <- ncol(current_data)        
-  iteration <- 0                      
-  ADF_pvalues <- numeric(variables) 
-  names(ADF_pvalues) <- colnames(current_data)[2:ending]
+  variables <- ncol(current_data) - 1 # Exclude DATE column
+  ending <- ncol(current_data)   # Last column index     
+  iteration <- 0  # To track the number of iterations                    
+  ADF_pvalues <- numeric(variables) # To store ADF p-values
+  names(ADF_pvalues) <- colnames(current_data)[2:ending] # Name the p-values vector
   
   
   # Your exact loop logic
@@ -19,22 +20,22 @@ make_stationary <- function(data, border, lagvar) {
     
     # 2. Check Exit Condition
     if (iteration == 2) {
-      final_data <- current_data # Save the Last Dataset
+      final_data <- current_data # Save the Last Data set
       break # Stop the loop if all stationary
     }
     
     # 3. Prepare Next Iteration
-    diff_data <- data.frame(DATE = current_data$DATE[-1]) # Build next dataset
+    diff_data <- data.frame(DATE = current_data$DATE[-1]) # Build next Data set
     
     for (i in 1:variables) {
       name <- names(ADF_pvalues)[i]
       x <- current_data[[i + 1]]
       
-      if (i <= lagvar && iteration == 0) {# && iteration == 0 BECAUSE after the first one the percentages MUST be diff not per changed
+      if (i <= lagvar && iteration == 0) {
         if (ADF_pvalues[i] < border) {
-          diff_data[[name]] <- x[-1] # KEEP ORIGINAL VALUES BUT REMOVE FIRST ROW
+          diff_data[[name]] <- x[-1] # Keep origin -1 due to diff
         } else {
-          diff_data[[name]] <- diff(log(x)) # PERCENTAGE CHANGE
+          diff_data[[name]] <- diff(log(x)) # diff log he million euros
         }
       } else {
         if (ADF_pvalues[i] < border) {
