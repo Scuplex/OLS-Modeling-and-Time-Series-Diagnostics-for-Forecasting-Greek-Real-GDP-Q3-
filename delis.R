@@ -6,13 +6,7 @@ source("AutoHomo.R")
 
 # Initialize Variables
 data <- read_excel(file_path) 
-variables <- ncol(data) - 1 # Find the number of the variables i have based on the Excel Format
-ending <- ncol(data) # Go till the last variable <- <- in the Excel Format
-current_data <- data # hold the current_data for temporary in the loop
-variables <- ncol(current_data) - 1 # Find the Amount of Variables we will use for the regression -1 due to the date
-ending <- ncol(current_data) # Ending Variable
 y_name <- names(data)[2] # Dependent Variable Name
-
 
 # 1. Separate Dummies from Data
 data_for_stationarity <- data[ , !(names(data) %in% dummy_cols)] # Data without dummies
@@ -35,25 +29,19 @@ diagnostics_df <- AutoHomo(models_df, final_data, y_name)
 final_results <- cbind(models_df, diagnostics_df) # Combine Models with Diagnostics
 
 # Correlation matrix
-correlation_matrix <- cor(final_data[, 2:ending])
+correlation_matrix <- cor(final_data[, 2:(ncol(data)-2)]) # Exclude DATE column
 
 # Step last sort the models
 
 sorted_results <- final_results %>%
 
-  mutate(Is_Strictly_Valid = Autocorrelation_Pval > 0.05 & 
-           Homoscedasticity_Pval > 0.05 & 
-           Normality_Pval > 0.05 &   # Residuals must be normal
+  mutate(Is_Strictly_Valid = Autocorrelation_Pval > border & 
+           Homoscedasticity_Pval > border & 
+           Normality_Pval > border &   # Residuals must be normal
            VIF_Value < 5) %>%
   
   arrange(desc(Is_Strictly_Valid), AIC_Value, desc(R_Squared)) %>%
-  select(-any_of(c("Dcovid", "DGFC"))) %>%
+  select(-any_of(dummy_cols)) %>%
   select(everything(), AIC_Value, Autocorrelation_Pval, R_Squared, Homoscedasticity_Pval, Is_Strictly_Valid)
 
 head(sorted_results)
-
-# Print Menu
-
-print(final_adf_values) # Print the p-values
-print(vif_values) # Print the multicollinearity
-print(correlation_matrix) # Print the correlation
