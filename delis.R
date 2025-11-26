@@ -13,10 +13,19 @@ variables <- ncol(current_data) - 1 # Find the Amount of Variables we will use f
 ending <- ncol(current_data) # Ending Variable
 y_name <- names(data)[2] # Dependent Variable Name
 
-# Stationarity The Variables IF needed
-results_list <- make_stationary(data, border, lagvar) # Def for stationarity
-final_data <- results_list$final_data # Extract Final Data
-final_adf_values <- results_list$ADF_pvalues # Extract ADF P-values
+
+# 1. Separate Dummies from Data
+data_for_stationarity <- data[ , !(names(data) %in% dummy_cols)] # Data without dummies
+dummies_only <- data[ , dummy_cols, drop = FALSE] # Dummies only
+
+results_list <- make_stationary(data_for_stationarity, border, lagvar)  # Def for stationarity
+stationary_data <- results_list$final_data 
+final_adf_values <- results_list$ADF_pvalues
+
+rows_lost <- nrow(data) - nrow(stationary_data) # find how many rows we lost due to stationarity
+dummies_trimmed <- tail(dummies_only, -rows_lost) # Trim the dummies to match the stationary data
+
+final_data <- cbind(stationary_data, dummies_trimmed) # Combine Stationary Data with Dummies
 
 # Find All models
 models_df <- allmodels(final_data)
@@ -28,19 +37,17 @@ final_results <- cbind(models_df, diagnostics_df)
 # Step 2, Correlation matrix
 correlation_matrix <- cor(final_data[, 2:ending])
 
-# Step 3 scatter-plot
-
-# step last sort the models
+# Step last sort the models
 
 sorted_results <- final_results %>%
 
   mutate(Is_Strictly_Valid = Autocorrelation_Pval > 0.05 & 
            Homoscedasticity_Pval > 0.05 & 
            Normality_Pval > 0.05 &   # Residuals must be normal
-           VIF_Pval < 5) %>%
+           VIF_Value < 5) %>%
   
   arrange(desc(Is_Strictly_Valid), AIC_Value, desc(R_Squared)) %>%
-  select(everything(), AIC_Value, Autocorrelation_Pval, R_Squared, Autocorrelation_Pval, Homoscedasticity_Pval, Is_Strictly_Valid)
+  select(everything(), AIC_Value, Autocorrelation_Pval, R_Squared, Homoscedasticity_Pval, Is_Strictly_Valid)
 
 head(sorted_results)
 

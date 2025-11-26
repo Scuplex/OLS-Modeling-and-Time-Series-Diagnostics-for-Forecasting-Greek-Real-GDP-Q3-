@@ -16,10 +16,6 @@ AutoHomo <- function(models_df, final_data, dep_var_name) {
     # Get the current row
     current_row <- unlist(models_df[i, ])
     
-    # --- MAGIC STEP ---
-    # This checks if the value is 1, "1", or TRUE.
-    # The symbol %in% automatically handles NAs for you (it treats them as FALSE).
-    # This creates a list of variable names to include in this model.
     predictors <- na.omit(current_row)  # Remove NAs using na.omit which returns a vector without NAs
 
     
@@ -29,7 +25,7 @@ AutoHomo <- function(models_df, final_data, dep_var_name) {
       rhs_basic <- paste(paste0("`", predictors, "`"), collapse = " + ")
       rhs <- paste0(rhs_basic, 
                     " + dplyr::lag(`", dep_var_name, "`, 1)", 
-                    " + dplyr::lag(`", dep_var_name, "`, 2)") # carry the momentum with lag 6 months ago
+                    " + dplyr::lag(`", dep_var_name, "`, 2)",) # carry the momentum with lag 6 months ago
       
       f_string <- paste0("`", dep_var_name, "` ~ ", rhs)
       
@@ -53,14 +49,14 @@ AutoHomo <- function(models_df, final_data, dep_var_name) {
       norm_value[i] <- NA
       aikaike_value[i] <- NA
     }
-  }
+  } 
   
   # 4. Save and return the result
   results <- data.frame(
     Autocorrelation_Pval = ac_pvalues,
     Homoscedasticity_Pval = hc_pvalues,
     R_Squared = r2_pvalues,
-    VIF_Pval = vif_values,
+    VIF_Value = vif_values,
     Normality_Pval = norm_value,
     AIC_Value = aikaike_value
   )
