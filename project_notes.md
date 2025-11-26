@@ -39,32 +39,6 @@ No dummies
 
 
 
-# ask delis
-
-use shapiro?
-
-#normality test
-test_norm_KS<-ks.test(resid(model_1), pnorm)
-
-#n
-X_ALL<-diff(as.matrix(MASTER_FILE_R[,3:ncol(MASTER_FILE_R)]))
-X_ALL_LAG<- lag(X_ALL,1)
-Y<-as.matrix(Y_gr_log[2:nrow(Y_gr_log),1])
-names(Y)<- c('GDP_growth')
-DATASET <- data.frame(Y,X_ALL_LAG)
-DATASET <- data.frame(DATE[2:nrow(DATE),1],Y,X_ALL_LAG)
-
-model_1 <- lm(GDP_growth - 1 + IP1 + IP2 + IP3,
-              data = DATASET)
-
-#SPAW TO DEIGMA
-end_in_sample< VALE TO DATE POU THES NA STAMATISEI
-DATASET_IN_SAMPLE<- DATASET[DATASET[,1]<end_in_sample,]
-
-#SEED SPERM OILS#
-DUMMY_COVID <- as.matrix(0,nrow = nrow(DATASET),ncol=1)
-DUMMY_COVID[100:101,1] <- 1
-
 # ADD
 
 # Step 3 scatter-plot

@@ -19,8 +19,8 @@ data_for_stationarity <- data[ , !(names(data) %in% dummy_cols)] # Data without 
 dummies_only <- data[ , dummy_cols, drop = FALSE] # Dummies only
 
 results_list <- make_stationary(data_for_stationarity, border, lagvar)  # Def for stationarity
-stationary_data <- results_list$final_data 
-final_adf_values <- results_list$ADF_pvalues
+stationary_data <- results_list$final_data  # Stationary Data
+final_adf_values <- results_list$ADF_pvalues # ADF p-values
 
 rows_lost <- nrow(data) - nrow(stationary_data) # find how many rows we lost due to stationarity
 dummies_trimmed <- tail(dummies_only, -rows_lost) # Trim the dummies to match the stationary data
@@ -28,13 +28,13 @@ dummies_trimmed <- tail(dummies_only, -rows_lost) # Trim the dummies to match th
 final_data <- cbind(stationary_data, dummies_trimmed) # Combine Stationary Data with Dummies
 
 # Find All models
-models_df <- allmodels(final_data)
+models_df <- allmodels(stationary_data) # Find all models with a loop
 
 # Autocorrelation, Homoscedasticity, R2, VIF, NORM, AIC tests for all models
 diagnostics_df <- AutoHomo(models_df, final_data, y_name)
-final_results <- cbind(models_df, diagnostics_df)
+final_results <- cbind(models_df, diagnostics_df) # Combine Models with Diagnostics
 
-# Step 2, Correlation matrix
+# Correlation matrix
 correlation_matrix <- cor(final_data[, 2:ending])
 
 # Step last sort the models
@@ -47,6 +47,7 @@ sorted_results <- final_results %>%
            VIF_Value < 5) %>%
   
   arrange(desc(Is_Strictly_Valid), AIC_Value, desc(R_Squared)) %>%
+  select(-any_of(c("Dcovid", "DGFC"))) %>%
   select(everything(), AIC_Value, Autocorrelation_Pval, R_Squared, Homoscedasticity_Pval, Is_Strictly_Valid)
 
 head(sorted_results)

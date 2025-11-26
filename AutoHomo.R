@@ -10,6 +10,8 @@ AutoHomo <- function(models_df, final_data, dep_var_name) {
   norm_value <- numeric(nrow(models_df))
   aikaike_value <- numeric(nrow(models_df))
   
+  fixed_dummies <- " + `Dcovid` + `DGFC`"
+  
   # 2. Start the loop
   for (i in 1:nrow(models_df)) {
     
@@ -24,8 +26,9 @@ AutoHomo <- function(models_df, final_data, dep_var_name) {
       
       rhs_basic <- paste(paste0("`", predictors, "`"), collapse = " + ")
       rhs <- paste0(rhs_basic, 
+                    fixed_dummies, 
                     " + dplyr::lag(`", dep_var_name, "`, 1)", 
-                    " + dplyr::lag(`", dep_var_name, "`, 2)",) # carry the momentum with lag 6 months ago
+                    " + dplyr::lag(`", dep_var_name, "`, 2)")# carry the momentum with lag 6 months ago
       
       f_string <- paste0("`", dep_var_name, "` ~ ", rhs)
       
