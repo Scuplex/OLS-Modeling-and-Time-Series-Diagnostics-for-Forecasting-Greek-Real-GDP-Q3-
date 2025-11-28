@@ -70,8 +70,5 @@ summary(model)
 
 last_row <- tail(Final_Dataset, 1)
 
-# Predict next period
-next_forecast <- predict(model, newdata = last_row)
-next_forecast
 
 
