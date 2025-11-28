@@ -25,10 +25,11 @@ AutoHomo <- function(models_df, final_data, dep_var_name) {
     if (length(predictors) > 0) {
       
       rhs_basic <- paste(paste0("`", predictors, "`"), collapse = " + ")
-      rhs <- paste0(rhs_basic, 
-                    fixed_dummies, 
-                    " + dplyr::lag(`", dep_var_name, "`, 1)", 
-                    " + dplyr::lag(`", dep_var_name, "`, 2)")# carry the momentum with lag 6 months ago
+      rhs <- paste0(rhs_basic, fixed_dummies)
+      #rhs <- paste0(rhs_basic, 
+                    #fixed_dummies, 
+                    #" + dplyr::lag(`", dep_var_name, "`, 1)", 
+                    #" + dplyr::lag(`", dep_var_name, "`, 2)")# carry the momentum with lag 6 months ago
       
       f_string <- paste0("`", dep_var_name, "` ~ ", rhs)
       

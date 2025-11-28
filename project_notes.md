@@ -61,3 +61,54 @@ ggplot(plot_data_long, aes(x = Value, y = `Real GDP`)) +
   # ask
   
   can i have million and perc change? i used diff log
+  
+  
+  
+  
+  
+  
+  
+  # notes to add
+  
+  Because i have a small sample i will use both ADF and KPSS tests to check for stationarity.
+What is stationarity? (The goal of ADF & KPSS)
+
+A time series is stationary if:
+
+its mean doesn’t drift over time
+
+its variance is stable
+
+shocks fade instead of accumulating
+
+2. ADF Test – Does the series HAVE a unit root?
+
+ADF = Augmented Dickey–Fuller Test
+
+Hypotheses
+
+H₀: series has a unit root (non-stationary) p<0.05 reject
+
+H₁: series is stationary
+
+
+
+3. KPSS Test – Is the series STATIONARY around a mean or trend? 
+
+KPSS = Kwiatkowski–Phillips–Schmidt–Shin
+
+KPSS flips the hypotheses.
+
+Hypotheses
+
+H₀: series is stationary # p<0.05 reject
+
+H₁: series is non-stationary
+
+
+ADF sometimes fails to reject non-stationarity when the sample is small.
+
+KPSS sometimes falsely detects non-stationarity when variance is high.
+
+
+  
