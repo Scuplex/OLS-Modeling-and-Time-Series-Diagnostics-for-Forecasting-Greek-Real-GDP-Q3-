@@ -33,7 +33,7 @@ Full_Lagged_Data <- data.frame(
 Full_Lagged_Data <- cbind(Full_Lagged_Data, dummies_trimmed)
 Full_Lagged_Data <- Full_Lagged_Data[-1, ]
 
-n_train_new <- 62
+n_train_new <- 61
 Train_Dataset <- Full_Lagged_Data[1:n_train_new, ]
 Predict_Dataset <- Full_Lagged_Data[(n_train_new + 1):nrow(Full_Lagged_Data), ]
 
