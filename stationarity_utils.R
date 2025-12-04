@@ -8,8 +8,8 @@ make_stationary <- function(data, border, lagvar) {
   iteration <- 0  # To track the number of iterations                    
   ADF_pvalues <- numeric(variables) # To store ADF p-values
   names(ADF_pvalues) <- colnames(current_data)[2:ending] # Name the p-values vector
-  KPSS_pvalues <- numeric(variables) # To store KPSS p-values
-  names(KPSS_pvalues) <- colnames(current_data)[2:ending] # Name the p-values vector
+  #KPSS_pvalues <- numeric(variables) # To store KPSS p-values
+  #names(KPSS_pvalues) <- colnames(current_data)[2:ending] # Name the p-values vector
   
   
   # Your exact loop logic
@@ -20,8 +20,8 @@ make_stationary <- function(data, border, lagvar) {
       ADF_pvalues[i - 1] <- ADF_result$p.value # Find the P-values
       
       # KPSS (null = stationary)
-      KPSS_result <- kpss.test(as.numeric(current_data[[i]]), null = "Level")
-      KPSS_pvalues[i - 1] <- KPSS_result$p.value
+      #KPSS_result <- kpss.test(as.numeric(current_data[[i]]), null = "Level")
+      #KPSS_pvalues[i - 1] <- KPSS_result$p.value
     }
     
     # 2. Check Exit Condition
@@ -37,7 +37,7 @@ make_stationary <- function(data, border, lagvar) {
       name <- names(ADF_pvalues)[i]
       x <- current_data[[i + 1]]
       
-      stationary <- (ADF_pvalues[i] < border) && (KPSS_pvalues[i] > border)
+      stationary <- (ADF_pvalues[i] < border)# && (KPSS_pvalues[i] > border)
       
       if (i <= lagvar && iteration == 0) {
         if (stationary) {
@@ -57,5 +57,5 @@ make_stationary <- function(data, border, lagvar) {
     iteration <- iteration + 1   # Move to next iteration
   }
   
-  return(list(final_data = final_data, ADF_pvalues = ADF_pvalues, KPSS_pvalues = KPSS_pvalues))
+  return(list(final_data = final_data, ADF_pvalues = ADF_pvalues))#, KPSS_pvalues = KPSS_pvalues))
 }

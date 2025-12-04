@@ -10,7 +10,7 @@ AutoHomo <- function(models_df, final_data, dep_var_name) {
   norm_value <- numeric(nrow(models_df))
   aikaike_value <- numeric(nrow(models_df))
   
-  fixed_dummies <- " + `Dcovid` + `DGFC`"
+  fixed_dummies <- " + `Dcovid`"
   
   # 2. Start the loop
   for (i in 1:nrow(models_df)) {
@@ -37,7 +37,7 @@ AutoHomo <- function(models_df, final_data, dep_var_name) {
       model <- lm(as.formula(f_string), data = final_data) 
       
       # Run the Tests
-      ac_pvalues[i] <- bgtest(model)$p.value  # Autocorrelation
+      ac_pvalues[i] <- bgtest(model)$p.value  # Autocorrelation 
       hc_pvalues[i] <- bptest(model)$p.value  # Homoscedasticity
       r2_pvalues[i] <- summary(model)$r.squared # R Squared
       vif_values[i] <- max(vif(model)) # max VIF value cause we care about the worst case

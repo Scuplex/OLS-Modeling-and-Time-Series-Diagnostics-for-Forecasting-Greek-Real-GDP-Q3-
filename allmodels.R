@@ -8,7 +8,7 @@ allmodels <- function(data, remove_cols = c("DATE", "Real GDP")) {
   # 2. Find All Models
   for (k in 1:length(predictors)) {
     
-    combos <- combn(predictors, k)  # function to get combinations
+    combos <- combn(predictors, k)  # function to get combinations install.packages("fscaret")
     
     for (j in 1:ncol(combos)) {
       all_models[[row_index]] <- combos[, j]

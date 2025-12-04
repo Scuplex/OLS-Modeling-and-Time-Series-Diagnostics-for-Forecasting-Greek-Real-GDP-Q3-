@@ -111,4 +111,14 @@ ADF sometimes fails to reject non-stationarity when the sample is small.
 KPSS sometimes falsely detects non-stationarity when variance is high.
 
 
-  
+# employment_lagged add the name 
+
+
+## na valw 1 dummy kai na valw 2-3 times oxi parapanw
+# thelw ola ta f statistics to pvalue na einai mikro
+# thelw kai ta pvalue ton metavlitwn sto modelo n einai statistika simantika pvalue < 0.05
+# an exw b arnitiko dn einai kalo to model kai prepei na exw thetika B 
+# adjusted R squared na einai megalo.
+
+pws kanw provlepeis predict(mode,date>=)
+kanw metavlites gia to out of sample and in sample 
