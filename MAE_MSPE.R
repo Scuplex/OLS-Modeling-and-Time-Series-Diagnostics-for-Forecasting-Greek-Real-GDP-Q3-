@@ -1,11 +1,11 @@
 source("libraries.R")
 source("config.R")
 
-ModelEstimate <- function(valid_models, Lagged_Dataset, dep_var_name) {
+MaeMspe <- function(valid_models, Lagged_Dataset, dep_var_name, Predict_Dataset) {
   
   # 1. Create empty places to store our results
-  adj_r_squared <- numeric(nrow(valid_models))
-  model_p_value <- numeric(nrow(valid_models)) # For the F-statistic check
+  MSPE <- numeric(nrow(valid_models))
+  MAE <- numeric(nrow(valid_models)) # For the F-statistic check
   fixed_dummies <- " + `Dcovid`"
   
   # 2. Start the loop
@@ -25,28 +25,29 @@ ModelEstimate <- function(valid_models, Lagged_Dataset, dep_var_name) {
       
       # Run the Regression
       model <- lm(as.formula(f_string), data = Lagged_Dataset) 
-      model_sum <- summary(model)
+      predictions_oos <- predict(model, newdata = Predict_Dataset)
       
-      # Run the Tests
-      adj_r_squared[i] <- model_sum$adj.r.squared  # Autocorrelation 
-      f_stat <- model_sum$fstatistic
-      if (!is.null(f_stat)) {
-        model_p_value[i] <- pf(f_stat[1], f_stat[2], f_stat[3], lower.tail = FALSE)
-      } else {
-        model_p_value[i] <- NA
-      }
+      comparison <- data.frame(
+        Date = Predict_Dataset$Date,
+        Actual_GDP = Predict_Dataset$`Real GDP`,
+        Predicted_GDP = predictions_oos
+      )
+      
+      residuals <- comparison$Actual_GDP - comparison$Predicted_GDP
+      MSPE[i] <- mean(residuals^2)
+      MAE[i] <- mean(abs(residuals))
       
     } else {
       # No variables found for this row
-      adj_r_squared[i] <- NA
-      model_p_value[i] <- NA
+      MSPE[i] <- NA
+      MAE[i] <- NA
     }
   } 
   
   # 4. Save and return the result
   results <- data.frame(
-    Adjusted_R2 = adj_r_squared,
-    Model_Fpval  = model_p_value
+    MSPE_val = MSPE,
+    MAE_val  = MAE
   )
   
   return(results)

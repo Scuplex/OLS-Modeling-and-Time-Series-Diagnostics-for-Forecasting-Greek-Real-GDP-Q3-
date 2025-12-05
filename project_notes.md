@@ -122,3 +122,21 @@ KPSS sometimes falsely detects non-stationarity when variance is high.
 
 pws kanw provlepeis predict(mode,date>=)
 kanw metavlites gia to out of sample and in sample 
+
+
+# single model
+model_1 <- lm(`Real GDP` ~ `Employment Rate` + `Receipt travels` + `EXPORT GOOD/SER` + `IPI` + `Dcovid`, 
+              data = Train_Dataset)
+summary(model_1)
+
+predictions_oos <- predict(model_1, newdata = Predict_Dataset)
+
+comparison <- data.frame(
+  Date = Predict_Dataset$Date,
+  Actual_GDP = Predict_Dataset$`Real GDP`,
+  Predicted_GDP = predictions_oos
+)
+
+residuals <- comparison$Actual_GDP - comparison$Predicted_GDP
+MSPE <- mean(residuals^2)
+MAE <- mean(abs(residuals))

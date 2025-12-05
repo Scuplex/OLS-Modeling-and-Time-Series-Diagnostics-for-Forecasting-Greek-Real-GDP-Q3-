@@ -4,6 +4,7 @@ source("stationarity_utils.R")
 source("allmodels.R")
 source("AutoHomo.R")
 source("models_estimate.R")
+source("MAE_MSPE.R")
 
 # Initialize Variables
 data <- read_excel(file_path) # Read Data
@@ -62,12 +63,21 @@ sorted_results <- final_results %>%
   select(everything(), AIC_Value, Autocorrelation_Pval, R_Squared, Homoscedasticity_Pval, Is_Strictly_Valid)
 
 
-# estimate each model their pvalues f statistic exc
-valid_models <- sorted_results[sorted_results$Is_Strictly_Valid == TRUE, 1:8] # get only valid models
+# Estimate each model their p-values f statistic etc
+valid_models <- sorted_results[sorted_results$Is_Strictly_Valid == TRUE, 1:variabless] # get only valid models
 Model_Estimate <- ModelEstimate(valid_models, Train_Dataset, y_name)
-final_models_est <- cbind(valid_models,Model_Estimate) # get the first model
+final_models_est <- cbind(valid_models,Model_Estimate) # find the r2 of all models and the p-values
 
-model_1 <- lm(`Real GDP` ~ `Employment Rate` + `Receipt travels` + `Dcovid`, 
+# Estimate the MAE and the MSPE of each model
+
+MAE_MSPE <- MaeMspe(valid_models, Train_Dataset, y_name, Predict_Dataset)
+Models_ending <- cbind(final_models_est,MAE_MSPE)
+
+best_models <- Models_ending %>%
+  arrange(MSPE_val, MAE_val)
+
+
+model_1 <- lm(`Real GDP` ~ `Receipt travels` + `EXPORT GOOD/SER` + `CPI QQ` + `Employment Rate` + `Dcovid`, 
               data = Train_Dataset)
 summary(model_1)
 
@@ -79,6 +89,9 @@ comparison <- data.frame(
   Predicted_GDP = predictions_oos
 )
 
+residuals <- comparison$Actual_GDP - comparison$Predicted_GDP
+MSPE <- mean(residuals^2)
+MAE <- mean(abs(residuals))
 
 ggplot(comparison, aes(x = Date)) +
   geom_line(aes(y = Actual_GDP, color = "Actual"), size = 1.2) +
