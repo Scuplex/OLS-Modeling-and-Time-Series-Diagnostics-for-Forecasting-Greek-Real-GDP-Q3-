@@ -47,7 +47,10 @@ diagnostics_df <- AutoHomo(models_df, Train_Dataset, y_name)
 final_results <- cbind(models_df, diagnostics_df) # Combine Models with Diagnostics
 
 # Correlation matrix
-correlation_matrix <- cor(Full_Lagged_Data[, 2:(ncol(data)-2)]) # Exclude DATE column
+correlation_matrix <- cor(Full_Lagged_Data[, 2:(ncol(Full_Lagged_Data)-2)]) # Exclude DATE column
+image(correlation_matrix, col = colorRampPalette(c("red", "green"))(100), axes = FALSE, main = "Correlation Matrix Heatmap")
+axis(1, at = seq(0, 1, length.out = ncol(correlation_matrix)), labels = colnames(correlation_matrix), las = 2)
+axis(2, at = seq(0, 1, length.out = nrow(correlation_matrix)), labels = colnames(correlation_matrix), las = 2)
 
 # Step last sort the models
 
@@ -76,9 +79,13 @@ Models_ending <- cbind(final_models_est,MAE_MSPE)
 best_models <- Models_ending %>%
   arrange(MSPE_val, MAE_val)
 
+# Pick 1 model
 
 model_1 <- lm(`Real GDP` ~ `Receipt travels` + `EXPORT GOOD/SER` + `CPI QQ` + `Employment Rate` + `Dcovid`, 
               data = Train_Dataset)
+model_1 <- lm(`Real GDP` ~ `European GDP` + `CPI QQ` + `German Searches` + `Employment Rate` + `Dcovid`, 
+              data = Train_Dataset)
+
 summary(model_1)
 
 predictions_oos <- predict(model_1, newdata = Predict_Dataset)

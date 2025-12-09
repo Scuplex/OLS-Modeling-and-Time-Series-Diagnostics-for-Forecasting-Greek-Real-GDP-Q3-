@@ -38,7 +38,6 @@ MaeMspe <- function(valid_models, Lagged_Dataset, dep_var_name, Predict_Dataset)
       MAE[i] <- mean(abs(residuals))
       
     } else {
-      # No variables found for this row
       MSPE[i] <- NA
       MAE[i] <- NA
     }
