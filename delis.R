@@ -101,8 +101,8 @@ MSPE <- mean(residuals^2)
 MAE <- mean(abs(residuals))
 
 ggplot(comparison, aes(x = Date)) +
-  geom_line(aes(y = Actual_GDP, color = "Actual"), size = 1.2) +
-  geom_line(aes(y = Predicted_GDP, color = "Predicted"), size = 1.2, linetype = "dashed") +
+  geom_line(aes(y = Actual_GDP, color = "Actual"), linewidth = 1.2) +
+  geom_line(aes(y = Predicted_GDP, color = "Predicted"), linewidth = 1.2, linetype = "dashed") +
   scale_color_manual(values = c("Actual" = "black", "Predicted" = "red")) +
   labs(title = "Final Forecast Validation", y = "Real GDP", x = "Date") +
   theme_minimal()
