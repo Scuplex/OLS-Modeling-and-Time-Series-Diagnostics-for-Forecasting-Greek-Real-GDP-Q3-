@@ -22,27 +22,29 @@ dummies_trimmed <- tail(dummies_only, -rows_lost) # Trim the dummies to match th
 stationary_dum <- cbind(stationary_nodum, dummies_trimmed) # Combine Stationary Data with Dummies
 
 # Train-Predicting Dataset
-X_ALL <- stationary_nodum[, 3:ncol(stationary_nodum)]
-Y_ALL <- stationary_nodum[, 2]
-X_LAGGED <- dplyr::lag(X_ALL, 1)
-Full_Lagged_Data <- data.frame(
+X_ALL <- stationary_nodum[, 3:ncol(stationary_nodum)] # get all X
+Y_ALL <- stationary_nodum[, 2] # get all Y
+X_LAGGED <- dplyr::lag(X_ALL, 1) # Lag X
+Y_LAGGED <- dplyr::lag(Y_ALL, 1) # Lag Y
+Full_Lagged_Data <- data.frame( # Create a dataframe combining them
   Date = stationary_nodum[, 1],
   `Real GDP` = Y_ALL,
-  X_LAGGED,
+  X_LAGGED,Y_LAGGED,
   check.names = FALSE
 )
-Full_Lagged_Data <- cbind(Full_Lagged_Data, dummies_trimmed)
+mod_data <- Full_Lagged_Data[-1] # dataset for models
+Full_Lagged_Data <- cbind(Full_Lagged_Data, dummies_trimmed) # out-in sample dataset
 Full_Lagged_Data <- Full_Lagged_Data[-1, ]
 
-n_train_new <- 61
+n_train_new <- 62
 Train_Dataset <- Full_Lagged_Data[1:n_train_new, ]
 Predict_Dataset <- Full_Lagged_Data[(n_train_new + 1):nrow(Full_Lagged_Data), ]
 
 
 # Find All models
-models_df <- allmodels(stationary_nodum) # Find all models with a loop
+models_df <- allmodels(mod_data) # Find all models with a loop
 
-# Autocorrelation, Homoscedasticity, R2, VIF, NORM, AIC tests for all models
+# Autocorrelation, Homoscedasticity, R2, VIF, NORM, for all models
 diagnostics_df <- AutoHomo(models_df, Train_Dataset, y_name)
 final_results <- cbind(models_df, diagnostics_df) # Combine Models with Diagnostics
 
@@ -50,7 +52,7 @@ final_results <- cbind(models_df, diagnostics_df) # Combine Models with Diagnost
 correlation_matrix <- cor(Full_Lagged_Data[, 2:(ncol(Full_Lagged_Data)-2)]) # Exclude DATE column
 image(correlation_matrix, col = colorRampPalette(c("red", "green"))(100), axes = FALSE, main = "Correlation Matrix Heatmap")
 axis(1, at = seq(0, 1, length.out = ncol(correlation_matrix)), labels = colnames(correlation_matrix), las = 2)
-axis(2, at = seq(0, 1, length.out = nrow(correlation_matrix)), labels = colnames(correlation_matrix), las = 2)
+axis(2, at = seq(0, 1, length.out = nrow(correlation_matrix)), labels = colnames(correlation_matrix), las = 2) # Corr matrix
 
 # Step last sort the models
 
@@ -67,8 +69,8 @@ sorted_results <- final_results %>%
 
 
 # Estimate each model their p-values f statistic etc
-valid_models <- sorted_results[sorted_results$Is_Strictly_Valid == TRUE, 1:variabless] # get only valid models
-Model_Estimate <- ModelEstimate(valid_models, Train_Dataset, y_name)
+valid_models <- subset(sorted_results, Is_Strictly_Valid)[, 1:variabless]
+Model_Estimate <- ModelEstimate(valid_models, Train_Dataset, y_name) # Estimate thir f statistic
 final_models_est <- cbind(valid_models,Model_Estimate) # find the r2 of all models and the p-values
 
 # Estimate the MAE and the MSPE of each model
@@ -81,19 +83,18 @@ best_models <- Models_ending %>%
 
 # Pick 1 model
 
-model_1 <- lm(`Real GDP` ~ `Receipt travels` + `EXPORT GOOD/SER` + `CPI QQ` + `Employment Rate` + `Dcovid`, 
+model_1 <- lm(`Real GDP` ~ `Receipt travels` + `EXPORT GOOD/SER` + `German Searches` + `Consumer` + `IPI` + `Y_LAGGED` + `Dcovid` + `Drebound`, 
               data = Train_Dataset)
-model_1 <- lm(`Real GDP` ~ `European GDP` + `CPI QQ` + `German Searches` + `Employment Rate` + `Dcovid`, 
-              data = Train_Dataset)
+
 
 summary(model_1)
 
-predictions_oos <- predict(model_1, newdata = Predict_Dataset)
+predictions_s <- predict(model_1, newdata = Predict_Dataset)
 
 comparison <- data.frame(
   Date = Predict_Dataset$Date,
   Actual_GDP = Predict_Dataset$`Real GDP`,
-  Predicted_GDP = predictions_oos
+  Predicted_GDP = predictions_s
 )
 
 residuals <- comparison$Actual_GDP - comparison$Predicted_GDP

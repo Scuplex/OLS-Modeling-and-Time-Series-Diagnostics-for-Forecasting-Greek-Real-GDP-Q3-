@@ -6,7 +6,7 @@ MaeMspe <- function(valid_models, Lagged_Dataset, dep_var_name, Predict_Dataset)
   # 1. Create empty places to store our results
   MSPE <- numeric(nrow(valid_models))
   MAE <- numeric(nrow(valid_models)) # For the F-statistic check
-  fixed_dummies <- " + `Dcovid`"
+  fixed_dummies <- " + `Dcovid` + `Drebound`"
   
   # 2. Start the loop
   for (i in 1:nrow(valid_models)) {
