@@ -44,6 +44,7 @@ Predict_Dataset <- Full_Lagged_Data[(n_train_new + 1):nrow(Full_Lagged_Data), ]
 # Find All models
 models_df <- allmodels(mod_data) # Find all models with a loop
 
+diagn_dataset <- Train_Dataset[,-(15:ncol(Train_Dataset))]
 # Autocorrelation, Homoscedasticity, R2, VIF, NORM, for all models
 diagnostics_df <- AutoHomo(models_df, Train_Dataset, y_name)
 final_results <- cbind(models_df, diagnostics_df) # Combine Models with Diagnostics
@@ -85,7 +86,6 @@ best_models <- Models_ending %>%
 
 model_1 <- lm(`Real GDP` ~ `Receipt travels` + `EXPORT GOOD/SER` + `German Searches` + `Consumer` + `IPI` + `Y_LAGGED` + `Dcovid` + `Drebound`, 
               data = Train_Dataset)
-
 
 summary(model_1)
 
