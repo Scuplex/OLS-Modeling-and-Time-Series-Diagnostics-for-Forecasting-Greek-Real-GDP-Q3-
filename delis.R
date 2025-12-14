@@ -6,100 +6,92 @@ source("AutoHomo.R")
 source("models_estimate.R")
 source("MAE_MSPE.R")
 
-# Initialize Variables
+# Initialize Data set
+
 data <- read_excel(file_path) # Read Data
 y_name <- names(data)[2] # Dependent Variable Name
 
-# 1. Separate Dummies from Data
+# 1. Stationarity Check / Stationary data
+
 data_for_stationarity <- data[ , !(names(data) %in% dummy_cols)] # Data without dummies
 dummies_only <- data[ , dummy_cols, drop = FALSE] # Dummies only
-
 results_list <- make_stationary(data_for_stationarity, border, lagvar)  # Def for stationarity
 stationary_nodum <- results_list$final_data  # Stationary Data
-final_adf_values <- results_list$ADF_pvalues # ADF p-values 
+final_adf_values <- results_list$ADF_pvalues # ADF p-values for each variable
 rows_lost <- nrow(data) - nrow(stationary_nodum) # find how many rows we lost due to stationarity
 dummies_trimmed <- tail(dummies_only, -rows_lost) # Trim the dummies to match the stationary data
 stationary_dum <- cbind(stationary_nodum, dummies_trimmed) # Combine Stationary Data with Dummies
 
-# Train-Predicting Dataset
+# 2. Lagged Data set / Train - Predict Data set
+
 X_ALL <- stationary_nodum[, 3:ncol(stationary_nodum)] # get all X
 Y_ALL <- stationary_nodum[, 2] # get all Y
 X_LAGGED <- dplyr::lag(X_ALL, 1) # Lag X
 Y_LAGGED <- dplyr::lag(Y_ALL, 1) # Lag Y
-Full_Lagged_Data <- data.frame( # Create a dataframe combining them
-  Date = stationary_nodum[, 1],
-  `Real GDP` = Y_ALL,
-  X_LAGGED,Y_LAGGED,
-  check.names = FALSE
-)
-mod_data <- Full_Lagged_Data[-1] # dataset for models
-Full_Lagged_Data <- cbind(Full_Lagged_Data, dummies_trimmed) # out-in sample dataset
-Full_Lagged_Data <- Full_Lagged_Data[-1, ]
+Full_Lagged_Data <- data.frame( Date = stationary_nodum[, 1], `Real GDP` = Y_ALL, X_LAGGED,Y_LAGGED, check.names = FALSE) # Create a data frame combining them
+mod_data <- Full_Lagged_Data[-1] # Data set for models WITHOUT dummies
+Full_Lagged_Data <- cbind(Full_Lagged_Data, dummies_trimmed)
+Full_Lagged_Data <- Full_Lagged_Data[-1, ] # Lagged Data set for models
 
-n_train_new <- 62
+# Train-Predicting Data set
 Train_Dataset <- Full_Lagged_Data[1:n_train_new, ]
 Predict_Dataset <- Full_Lagged_Data[(n_train_new + 1):nrow(Full_Lagged_Data), ]
 
+# 3. Find All models - Autocorrelation , Homoscedasticity, R2, VIF, NORM ------> (Explanatory)
 
-# Find All models
-models_df <- allmodels(mod_data) # Find all models with a loop
-
-diagn_dataset <- Train_Dataset[,-(15:ncol(Train_Dataset))]
-# Autocorrelation, Homoscedasticity, R2, VIF, NORM, for all models
-diagnostics_df <- AutoHomo(models_df, Train_Dataset, y_name)
+models_df <- allmodels(mod_data) # Find all models using the def all models
+diagn_dataset <- Train_Dataset[,-(15:ncol(Train_Dataset))] # Data set for diagnostics without dummies CAUSE all Dummies = 0
+diagnostics_df <- AutoHomo(models_df, diagn_dataset, y_name) # Find Diagnostics for all models using def
 final_results <- cbind(models_df, diagnostics_df) # Combine Models with Diagnostics
 
-# Correlation matrix
+# 4. Correlation matrix - Scatter plot
+
 correlation_matrix <- cor(Full_Lagged_Data[, 2:(ncol(Full_Lagged_Data)-2)]) # Exclude DATE column
 image(correlation_matrix, col = colorRampPalette(c("red", "green"))(100), axes = FALSE, main = "Correlation Matrix Heatmap")
 axis(1, at = seq(0, 1, length.out = ncol(correlation_matrix)), labels = colnames(correlation_matrix), las = 2)
 axis(2, at = seq(0, 1, length.out = nrow(correlation_matrix)), labels = colnames(correlation_matrix), las = 2) # Corr matrix
 
-# Step last sort the models
+par(mfrow = c(2, 2)) # 2x2 grid
+
+plot(Full_Lagged_Data$`Real GDP`, Full_Lagged_Data$`European GDP`, 
+     main = "vs European GDP", xlab = "Real GDP", ylab = "Euro GDP", pch = 19, col = "blue") # European GDP scatterplot
+plot(Full_Lagged_Data$`Real GDP`, Full_Lagged_Data$`Employment Rate`, 
+     main = "vs Emp. Rate", xlab = "Real GDP", ylab = "Emp. Rate", pch = 19, col = "red") # Employment Rate scatterplot
+plot(Full_Lagged_Data$`Real GDP`, Full_Lagged_Data$`Crude Oil/brent`, 
+     main = "vs Crude Oil", xlab = "Real GDP", ylab = "Crude Oil", pch = 19, col = "green") # Crude Oil scatterplot
+plot(Full_Lagged_Data$`Real GDP`, Full_Lagged_Data$`Receipt Travel`, 
+     main = "vs Crude Oil", xlab = "Real GDP", ylab = "Receipt Travel", pch = 19, col = "purple") # Receipt Travels scatterplot
+par(mfrow = c(1, 1)) # Reset to normal Grid 1x1 
+
+# 5. Sort Models based on criteria
 
 sorted_results <- final_results %>%
 
-  mutate(Is_Strictly_Valid = Autocorrelation_Pval > border & 
-           Homoscedasticity_Pval > border & 
-           Normality_Pval > border &   # Residuals must be normal
-           VIF_Value < 5) %>%
-  
+  mutate(Is_Strictly_Valid = Autocorrelation_Pval > border & Homoscedasticity_Pval > border & Normality_Pval > border & VIF_Value < 5) %>%
   arrange(desc(Is_Strictly_Valid), AIC_Value, desc(R_Squared)) %>%
   select(-any_of(dummy_cols)) %>%
   select(everything(), AIC_Value, Autocorrelation_Pval, R_Squared, Homoscedasticity_Pval, Is_Strictly_Valid)
 
 
-# Estimate each model their p-values f statistic etc
+# 6. Find the F statistic, MAE and MSPE of the valid models -------> ((Predicting))
+
 valid_models <- subset(sorted_results, Is_Strictly_Valid)[, 1:variabless]
-Model_Estimate <- ModelEstimate(valid_models, Train_Dataset, y_name) # Estimate thir f statistic
-final_models_est <- cbind(valid_models,Model_Estimate) # find the r2 of all models and the p-values
+Model_Estimate <- ModelEstimate(valid_models, Train_Dataset, y_name) # Estimate their F-statistic and R2
+final_models_est <- cbind(valid_models,Model_Estimate) # Combine with valid models
+MAE_MSPE <- MaeMspe(valid_models, Train_Dataset, y_name, Predict_Dataset) # Find their MAE and MSPE
+Models_ending <- cbind(final_models_est,MAE_MSPE) # Combine all together
+best_models <- Models_ending %>% arrange(MSPE_val, MAE_val) # Sort based on MSPE and MAE
 
-# Estimate the MAE and the MSPE of each model
+# 7. Pick the first best model based on the LEAST MSPE and MAE and do final predictions and plot
 
-MAE_MSPE <- MaeMspe(valid_models, Train_Dataset, y_name, Predict_Dataset)
-Models_ending <- cbind(final_models_est,MAE_MSPE)
+model_1 <- lm(`Real GDP` ~ `Receipt travels` + `European GDP` + `CPI QQ` + `German Searches` + `Employment Rate` + `Retail Trade` + `Consumer` + `Y_LAGGED`, 
+              data = Train_Dataset) # Best Model
+predictions_s <- predict(model_1, newdata = Predict_Dataset) # Final Predictions
+comparison <- data.frame(Date = Predict_Dataset$Date, Actual_GDP = Predict_Dataset$`Real GDP`, Predicted_GDP = predictions_s) # Compare Actual vs Predicted
 
-best_models <- Models_ending %>%
-  arrange(MSPE_val, MAE_val)
-
-# Pick 1 model
-
-model_1 <- lm(`Real GDP` ~ `Receipt travels` + `EXPORT GOOD/SER` + `German Searches` + `Consumer` + `IPI` + `Y_LAGGED` + `Dcovid` + `Drebound`, 
-              data = Train_Dataset)
-
-summary(model_1)
-
-predictions_s <- predict(model_1, newdata = Predict_Dataset)
-
-comparison <- data.frame(
-  Date = Predict_Dataset$Date,
-  Actual_GDP = Predict_Dataset$`Real GDP`,
-  Predicted_GDP = predictions_s
-)
-
-residuals <- comparison$Actual_GDP - comparison$Predicted_GDP
-MSPE <- mean(residuals^2)
-MAE <- mean(abs(residuals))
+# residuals <- comparison$Actual_GDP - comparison$Predicted_GDP # Find the residuals from predicting to real
+# MSPE <- mean(residuals^2) # Find MSPE of Model
+# MAE <- mean(abs(residuals)) # Find MAE of Model
 
 ggplot(comparison, aes(x = Date)) +
   geom_line(aes(y = Actual_GDP, color = "Actual"), linewidth = 1.2) +

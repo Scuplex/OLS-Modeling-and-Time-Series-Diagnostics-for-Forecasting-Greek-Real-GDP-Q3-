@@ -10,14 +10,12 @@ AutoHomo <- function(models_df, final_data, dep_var_name) {
   norm_value <- numeric(nrow(models_df))
   aikaike_value <- numeric(nrow(models_df))
   
-  fixed_dummies <- " + `Dcovid` + `Drebound`"
   
   # 2. Start the loop
   for (i in 1:nrow(models_df)) {
     
     # Get the current row
     current_row <- unlist(models_df[i, ])
-    
     predictors <- na.omit(current_row)  # Remove NAs using na.omit which returns a vector without NAs
 
     
@@ -25,8 +23,7 @@ AutoHomo <- function(models_df, final_data, dep_var_name) {
     if (length(predictors) > 0) {
       
       rhs_basic <- paste(paste0("`", predictors, "`"), collapse = " + ")
-      rhs <- paste0(rhs_basic, fixed_dummies)
-      f_string <- paste0("`", dep_var_name, "` ~ ", rhs)
+      f_string <- paste0("`", dep_var_name, "` ~ ", rhs_basic)
       
       # Run the Regression
       model <- lm(as.formula(f_string), data = final_data) 
@@ -35,7 +32,13 @@ AutoHomo <- function(models_df, final_data, dep_var_name) {
       ac_pvalues[i] <- bgtest(model)$p.value  # Autocorrelation 
       hc_pvalues[i] <- bptest(model)$p.value  # Homoscedasticity
       r2_pvalues[i] <- summary(model)$r.squared # R Squared
-      vif_values[i] <- max(vif(model)) # max VIF value cause we care about the worst case
+      terms_in_model <- attr(terms(model), "term.labels")
+      
+      if (length(terms_in_model) < 2) {
+        vif_values[i] <- NA
+      } else {
+        vif_values[i] <- max(car::vif(model))
+      }
       norm_value[i] <- ks.test(residuals(model), "pnorm", mean = mean(resid(model)), sd = sd(resid(model)))$p.value # The p-value of the Normality test must be high to accept normality p-value > 0.05
       aikaike_value[i] <- AIC(model) # AIC value for model comparison
       
