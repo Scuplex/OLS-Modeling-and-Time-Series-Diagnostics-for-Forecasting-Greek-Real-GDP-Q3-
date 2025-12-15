@@ -27,11 +27,7 @@ MaeMspe <- function(valid_models, Lagged_Dataset, dep_var_name, Predict_Dataset)
       model <- lm(as.formula(f_string), data = Lagged_Dataset) 
       predictions_oos <- predict(model, newdata = Predict_Dataset)
       
-      comparison <- data.frame(
-        Date = Predict_Dataset$Date,
-        Actual_GDP = Predict_Dataset$`Real GDP`,
-        Predicted_GDP = predictions_oos
-      )
+      comparison <- data.frame(Date = Predict_Dataset$Date, Actual_GDP = Predict_Dataset$`Real GDP`, Predicted_GDP = predictions_oos)
       
       residuals <- comparison$Actual_GDP - comparison$Predicted_GDP
       MSPE[i] <- mean(residuals^2)
@@ -44,10 +40,6 @@ MaeMspe <- function(valid_models, Lagged_Dataset, dep_var_name, Predict_Dataset)
   } 
   
   # 4. Save and return the result
-  results <- data.frame(
-    MSPE_val = MSPE,
-    MAE_val  = MAE
-  )
-  
+  results <- data.frame(MSPE_val = MSPE, MAE_val  = MAE)
   return(results)
 }

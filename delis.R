@@ -37,10 +37,10 @@ Full_Lagged_Data <- Full_Lagged_Data[-1, ] # Lagged Data set for models
 Train_Dataset <- Full_Lagged_Data[1:n_train_new, ]
 Predict_Dataset <- Full_Lagged_Data[(n_train_new + 1):nrow(Full_Lagged_Data), ]
 
-# 3. Find All models - Autocorrelation , Homoscedasticity, R2, VIF, NORM ------> (Explanatory)
+# 3. Find All models - Autocorrelation , Homoscedasticity, R2, VIF, NORM ------> (φορεκατιστινγκ)
 
 models_df <- allmodels(mod_data) # Find all models using the def all models
-diagn_dataset <- Train_Dataset[,-(15:ncol(Train_Dataset))] # Data set for diagnostics without dummies CAUSE all Dummies = 0
+diagn_dataset <- Train_Dataset[,-((variabless+4):ncol(Train_Dataset))] # Data set for diagnostics without dummies CAUSE all Dummies = 0
 diagnostics_df <- AutoHomo(models_df, diagn_dataset, y_name) # Find Diagnostics for all models using def
 final_results <- cbind(models_df, diagnostics_df) # Combine Models with Diagnostics
 
@@ -75,16 +75,38 @@ sorted_results <- final_results %>%
 
 # 6. Find the F statistic, MAE and MSPE of the valid models -------> ((Predicting))
 
-valid_models <- subset(sorted_results, Is_Strictly_Valid)[, 1:variabless]
-Model_Estimate <- ModelEstimate(valid_models, Train_Dataset, y_name) # Estimate their F-statistic and R2
+valid_models <- subset(sorted_results, Is_Strictly_Valid)
+valid_temp <- valid_models[, 1:variabless]
+Model_Estimate <- ModelEstimate(valid_temp, Train_Dataset, y_name) # Estimate their F-statistic and R2
 final_models_est <- cbind(valid_models,Model_Estimate) # Combine with valid models
-MAE_MSPE <- MaeMspe(valid_models, Train_Dataset, y_name, Predict_Dataset) # Find their MAE and MSPE
+MAE_MSPE <- MaeMspe(valid_temp, Train_Dataset, y_name, Predict_Dataset) # Find their MAE and MSPE
 Models_ending <- cbind(final_models_est,MAE_MSPE) # Combine all together
-best_models <- Models_ending %>% arrange(MSPE_val, MAE_val) # Sort based on MSPE and MAE
+
+best_models <- Models_ending %>%
+  mutate(
+    Is_Strictly_Valid = (
+      Autocorrelation_Pval > border & 
+        Homoscedasticity_Pval > border & 
+        Normality_Pval > border & 
+        VIF_Value < 5 &
+        Model_Fpval < border
+    )
+  ) %>%
+  arrange(desc(Is_Strictly_Valid), AIC_Value, MSPE_val) %>% 
+  select(-any_of(dummy_cols)) %>%
+  select(
+    starts_with("Var"), 
+    Is_Strictly_Valid, 
+    AIC_Value, 
+    MSPE_val, 
+    Adjusted_R2, 
+    Model_Fpval, 
+    everything()
+  )
 
 # 7. Pick the first best model based on the LEAST MSPE and MAE and do final predictions and plot
 
-model_1 <- lm(`Real GDP` ~ `Receipt travels` + `European GDP` + `CPI QQ` + `German Searches` + `Employment Rate` + `Retail Trade` + `Consumer` + `Y_LAGGED`, 
+model_1 <- lm(`Real GDP` ~ `Crude Oil/brent` + `German Searches` + `Employment Rate` + `Retail Trade` + `Consumer` + `10Y BOND INT`, 
               data = Train_Dataset) # Best Model
 predictions_s <- predict(model_1, newdata = Predict_Dataset) # Final Predictions
 comparison <- data.frame(Date = Predict_Dataset$Date, Actual_GDP = Predict_Dataset$`Real GDP`, Predicted_GDP = predictions_s) # Compare Actual vs Predicted

@@ -5,19 +5,19 @@ library(corrplot)
 
 par(mfrow = c(3, 1), mar = c(2, 4, 2, 2))
 # 2. Plot Receipt Travels
-plot(Full_Lagged_Data$Date, Full_Lagged_Data$`German Searches`, 
+plot(Full_Lagged_Data$Date, Full_Lagged_Data$`IPI`, 
      type = "l", col = "blue", lwd = 2,
-     main = "CPI", ylab = "RATE")
+     main = "IPI", ylab = "RATE")
 
 # 3. Plot German Searches
-plot(Full_Lagged_Data$Date, Full_Lagged_Data$`Employment Rate`, 
+plot(Full_Lagged_Data$Date, Full_Lagged_Data$`IMPORT GOOD/ser`, 
      type = "l", col = "red", lwd = 2,
-     main = "Crude Oil/Brent", ylab = "Oil")
+     main = "Employment Rate", ylab = "Oil")
 
 # 4. Plot European GDP
-plot(Full_Lagged_Data$Date, Full_Lagged_Data$`CPI QQ`, 
+plot(Full_Lagged_Data$Date, Full_Lagged_Data$`EXPORT GOOD/SER`, 
      type = "l", col = "darkgreen", lwd = 2,
-     main = "10 YEAR BONT INT", ylab = "Rate")
+     main = "EXPORT GOOD/SER", ylab = "Rate")
 
 # 5. Reset layout to normal
 par(mfrow = c(1, 1))
