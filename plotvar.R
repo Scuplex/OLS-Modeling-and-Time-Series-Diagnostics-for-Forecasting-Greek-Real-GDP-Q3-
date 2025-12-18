@@ -5,9 +5,9 @@ library(corrplot)
 
 par(mfrow = c(3, 1), mar = c(2, 4, 2, 2))
 # 2. Plot Receipt Travels
-plot(Full_Lagged_Data$Date, Full_Lagged_Data$`IPI`, 
+plot(Full_Lagged_Data$Date, Full_Lagged_Data$`Stock ATH`, 
      type = "l", col = "blue", lwd = 2,
-     main = "IPI", ylab = "RATE")
+     main = "Stock ATH", ylab = "RATE")
 
 # 3. Plot German Searches
 plot(Full_Lagged_Data$Date, Full_Lagged_Data$`IMPORT GOOD/ser`, 
@@ -26,16 +26,16 @@ par(mfrow = c(1, 1))
 par(mfrow = c(1, 1))
 
 # Chart 1
-plot(Full_Lagged_Data$`Real GDP`, Full_Lagged_Data$`European GDP`, 
-     main = "vs European GDP", xlab = "Real GDP", ylab = "Euro GDP", pch = 19, col = "blue")
+plot(Full_Lagged_Data$`Real GDP`, Full_Lagged_Data$`Stock ATH`, 
+     main = "vs Stock ATH", xlab = "Real GDP", ylab = "Stock ATH", pch = 19, col = "blue")
 
 # Chart 2
-plot(Full_Lagged_Data$`Real GDP`, Full_Lagged_Data$`Employment Rate`, 
-     main = "vs Emp. Rate", xlab = "Real GDP", ylab = "Emp. Rate", pch = 19, col = "red")
+plot(Full_Lagged_Data$`Real GDP`, Full_Lagged_Data$`German Searches`, 
+     main = "vs German Searches", xlab = "Real GDP", ylab = "German Searches", pch = 19, col = "red")
 
 # Chart 3
-plot(Full_Lagged_Data$`Real GDP`, Full_Lagged_Data$`Crude Oil/brent`, 
-     main = "vs Crude Oil", xlab = "Real GDP", ylab = "Crude Oil", pch = 19, col = "green")
+plot(Full_Lagged_Data$`Real GDP`, Full_Lagged_Data$`Y_LAGGED`, 
+     main = "vs Y_LAGGED", xlab = "Real GDP", ylab = "Y_LAGGED", pch = 19, col = "green")
 
 # Reset layout to normal
 par(mfrow = c(1, 1))
